@@ -78,6 +78,7 @@ public class SleepAudioPlugin extends Plugin {
             intent.putExtra(SleepAudioService.EXTRA_STARTED_AT, timer.optLong("startedAt", 0L));
             intent.putExtra(SleepAudioService.EXTRA_ENDS_AT, timer.optLong("endsAt", 0L));
             intent.putExtra(SleepAudioService.EXTRA_FADE_MINUTES, timer.getInteger("fadeMinutes", 3));
+            intent.putExtra(SleepAudioService.EXTRA_ALARM_ON_END, timer.optBoolean("alarmOnEnd", false));
         }
         dispatch(SleepAudioService.ACTION_SET_TIMER, intent);
         call.resolve();

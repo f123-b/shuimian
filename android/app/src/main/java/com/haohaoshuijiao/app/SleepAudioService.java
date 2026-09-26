@@ -1,6 +1,9 @@
 package com.haohaoshuijiao.app;
 
 import android.content.Intent;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.os.Handler;
 import android.os.Looper;
 import android.net.Uri;
@@ -37,6 +40,7 @@ public class SleepAudioService extends MediaSessionService {
     public static final String EXTRA_STARTED_AT = "startedAt";
     public static final String EXTRA_ENDS_AT = "endsAt";
     public static final String EXTRA_FADE_MINUTES = "fadeMinutes";
+    public static final String EXTRA_ALARM_ON_END = "alarmOnEnd";
 
     private static volatile boolean playing = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -61,10 +65,12 @@ public class SleepAudioService extends MediaSessionService {
         long startedAt;
         long endsAt;
         int fadeMinutes;
-        SleepTimer(long startedAt, long endsAt, int fadeMinutes) {
+        boolean alarmOnEnd;
+        SleepTimer(long startedAt, long endsAt, int fadeMinutes, boolean alarmOnEnd) {
             this.startedAt = startedAt;
             this.endsAt = endsAt;
             this.fadeMinutes = fadeMinutes;
+            this.alarmOnEnd = alarmOnEnd;
         }
     }
 
@@ -141,7 +147,9 @@ public class SleepAudioService extends MediaSessionService {
                 float factor = fadeMs <= 0 || remaining >= fadeMs ? 1f : Math.max(0f, remaining / (float) fadeMs);
                 for (int index = 0; index < players.size(); index++) applyVolume(index, factor);
                 if (remaining <= 0) {
+                    boolean alarmOnEnd = timer.alarmOnEnd;
                     stopPlayback();
+                    if (alarmOnEnd) playSoftAlarm();
                 } else {
                     handler.postDelayed(this, 1000L);
                 }
@@ -217,8 +225,35 @@ public class SleepAudioService extends MediaSessionService {
 
     private void updateTimer(Intent intent) {
         if (intent.getBooleanExtra(EXTRA_TIMER_CLEAR, false)) timer = null;
-        else timer = new SleepTimer(intent.getLongExtra(EXTRA_STARTED_AT, 0L), intent.getLongExtra(EXTRA_ENDS_AT, 0L), intent.getIntExtra(EXTRA_FADE_MINUTES, 3));
+        else timer = new SleepTimer(intent.getLongExtra(EXTRA_STARTED_AT, 0L), intent.getLongExtra(EXTRA_ENDS_AT, 0L), intent.getIntExtra(EXTRA_FADE_MINUTES, 3), intent.getBooleanExtra(EXTRA_ALARM_ON_END, false));
         scheduleTimerTick();
+    }
+
+    private void playSoftAlarm() {
+        new Thread(() -> {
+            final int sampleRate = 44100;
+            final int durationMs = 30_000;
+            final int totalSamples = sampleRate * durationMs / 1000;
+            final int bufferSize = Math.max(2048, AudioTrack.getMinBufferSize(sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT));
+            AudioTrack alarm = new AudioTrack(AudioManager.STREAM_MUSIC, sampleRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize, AudioTrack.MODE_STREAM);
+            short[] buffer = new short[bufferSize / 2];
+            alarm.play();
+            int written = 0;
+            while (written < totalSamples) {
+                int count = Math.min(buffer.length, totalSamples - written);
+                for (int index = 0; index < count; index++) {
+                    double progress = (written + index) / (double) totalSamples;
+                    double envelope = Math.min(1.0, progress * 3.0) * Math.min(1.0, (1.0 - progress) * 4.0);
+                    double time = (written + index) / (double) sampleRate;
+                    double tone = Math.sin(2.0 * Math.PI * 220.0 * time) * 0.55 + Math.sin(2.0 * Math.PI * 277.18 * time) * 0.3 + Math.sin(2.0 * Math.PI * 329.63 * time) * 0.15;
+                    buffer[index] = (short) (tone * envelope * 0.12 * Short.MAX_VALUE);
+                }
+                alarm.write(buffer, 0, count);
+                written += count;
+            }
+            alarm.stop();
+            alarm.release();
+        }, "haohao-soft-alarm").start();
     }
 
     @Nullable

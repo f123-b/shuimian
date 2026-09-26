@@ -4,6 +4,7 @@ export interface SleepTimerConfig {
   startedAt: number;
   endsAt: number;
   fadeMinutes: FadeMinutes;
+  alarmOnEnd?: boolean;
 }
 
 export interface SleepTimerSnapshot extends SleepTimerConfig {
@@ -20,9 +21,9 @@ export function readSleepTimer(timer: SleepTimerConfig | null, now = Date.now())
   return { ...timer, remainingMs, fadeFactor, expired: remainingMs <= 0 };
 }
 
-export function createSleepTimer(minutes: number | null, fadeMinutes: FadeMinutes, now = Date.now()) {
+export function createSleepTimer(minutes: number | null, fadeMinutes: FadeMinutes, alarmOnEnd = false, now = Date.now()) {
   if (minutes === null) return null;
-  return { startedAt: now, endsAt: now + minutes * 60_000, fadeMinutes } satisfies SleepTimerConfig;
+  return { startedAt: now, endsAt: now + minutes * 60_000, fadeMinutes, alarmOnEnd } satisfies SleepTimerConfig;
 }
 
 export function formatRemaining(ms: number) {

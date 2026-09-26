@@ -78,7 +78,7 @@ export function AppShell() {
   }, [controller]);
 
   const startPlayback = useCallback(async (minutes = timerMinutes, nap = false) => {
-    const timer = createSleepTimer(minutes, fadeMinutes);
+    const timer = createSleepTimer(minutes, fadeMinutes, nap);
     controller.setTimer(timer);
     if (timer) setNow(Date.now());
     const session = { id: `${Date.now()}`, startedAt: Date.now(), sceneId: currentScene.id, nap } satisfies SleepSession;
