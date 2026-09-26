@@ -1,0 +1,21 @@
+{
+  "assets": [
+    {
+      "file": "white-noise-cc0.mp3",
+      "name": "纯净白噪音",
+      "source": "BigSoundBank",
+      "license": "CC0 / public-domain equivalent",
+      "author": "Joseph SARDIN",
+      "originalUrl": "https://bigsoundbank.com/bruit-blanc-s1037.html"
+    },
+    {
+      "file": "white-noise-cc0.wav",
+      "name": "轻柔白噪音",
+      "source": "Portland State University sound examples",
+      "license": "CC0",
+      "author": "Bart Massey",
+      "originalUrl": "https://github.com/pdx-cs-sound/wavs/blob/main/noise.wav"
+    }
+  ],
+  "generatedFallbacks": "Rain, water, nature, indoor, scene, and colored-noise variants are procedurally generated locally when no bundled asset is available."
+}

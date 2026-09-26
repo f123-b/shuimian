@@ -1,0 +1,4 @@
+export function NapPage({ onClose, onStart }: { onClose: () => void; onStart: (minutes: number) => void }) {
+  const naps = [{ minutes: 10, label: "能量小憩", note: "清醒一点" }, { minutes: 20, label: "黄金午睡", note: "刚刚好" }, { minutes: 30, label: "深度休息", note: "给自己更多时间" }, { minutes: 45, label: "长时恢复", note: "慢慢回来" }];
+  return <main className="v17-page v17-nap-page"><header className="v17-panel-header"><button className="v17-back-button" onClick={onClose} type="button">‹</button><div><p className="v17-eyebrow">小憩</p><h1>我想眯一会</h1></div></header><p className="v17-panel-description">选一段时间，剩下的交给声音。</p><div className="v17-nap-options">{naps.map((nap) => <button key={nap.minutes} onClick={() => onStart(nap.minutes)} type="button"><span><strong>{nap.minutes} 分钟</strong><small>{nap.label}</small></span><em>{nap.note}</em></button>)}</div></main>;
+}
