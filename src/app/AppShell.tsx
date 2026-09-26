@@ -81,7 +81,9 @@ export function AppShell() {
     const timer = createSleepTimer(minutes, fadeMinutes);
     controller.setTimer(timer);
     if (timer) setNow(Date.now());
-    activeSessionRef.current = { id: `${Date.now()}`, startedAt: Date.now(), sceneId: currentScene.id, nap };
+    const session = { id: `${Date.now()}`, startedAt: Date.now(), sceneId: currentScene.id, nap } satisfies SleepSession;
+    activeSessionRef.current = session;
+    setHistory(saveSleepSession(session));
     await controller.play();
   }, [controller, currentScene.id, fadeMinutes, timerMinutes]);
 
