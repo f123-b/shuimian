@@ -1,0 +1,410 @@
+.app-screen.sleep-app {
+  background: #1b151f;
+  color: #f5ecee;
+}
+
+/* The product is a full-screen app. The phone bezel and device picker belong
+   only to the design-preview shell, so they stay out of the actual experience. */
+.phone-stage {
+  display: block;
+  padding: 0;
+  overflow: hidden;
+  background: #1b151f;
+}
+
+.device-menu-bar,
+.phone-bezel,
+.device-camera,
+.status-bar,
+.home-indicator-svg,
+.android-navigation-bar {
+  display: none !important;
+}
+
+.phone-scale-box,
+.phone-device,
+.device-screen {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.phone-scale-box {
+  position: relative;
+}
+
+.phone-device {
+  position: relative !important;
+  transform: none !important;
+}
+
+.device-screen {
+  position: relative !important;
+  top: 0 !important;
+  left: 0 !important;
+  border-radius: 0 !important;
+  background: #1b151f;
+}
+
+.mobile-app-viewport[data-platform="android"] {
+  bottom: 0 !important;
+}
+
+/* Touch feedback is handled by the Android system; never show the preview cursor. */
+.mobile-cursor {
+  display: none !important;
+}
+
+/* This MVP has no text entry. Keep the template keyboard runtime mounted,
+   but prevent its hidden transition layer from leaking into the app canvas. */
+.keyboard-dock[data-visible="false"] {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.keyboard-dock[data-visible="true"] {
+  visibility: visible;
+  opacity: 1;
+}
+
+.sleep-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 68px 24px calc(var(--mobile-safe-area-height) + 28px);
+  background: #1b151f;
+}
+
+.sleep-horizon {
+  position: absolute;
+  z-index: -2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 39%;
+  object-fit: cover;
+  object-position: center bottom;
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+.sleep-screen::after {
+  position: absolute;
+  z-index: -1;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 27%;
+  background: rgba(24, 19, 29, 0.66);
+  content: "";
+  pointer-events: none;
+}
+
+.sleep-header {
+  z-index: 1;
+  flex: none;
+  display: grid;
+  gap: 8px;
+  text-align: center;
+}
+
+.sleep-brand {
+  color: #fff4ee;
+  font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+  font-size: clamp(30px, 8vw, 38px);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  line-height: 1.1;
+  text-indent: 0.16em;
+}
+
+.sleep-tagline {
+  color: rgba(250, 231, 230, 0.64);
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  line-height: 1.5;
+  text-indent: 0.12em;
+}
+
+.sound-stage {
+  position: relative;
+  display: grid;
+  flex: none;
+  width: min(100%, 392px);
+  height: clamp(320px, 84vw, 392px);
+  min-height: 0;
+  place-items: center;
+  justify-self: center;
+  align-self: center;
+  margin: 28px auto 2px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sound-stage:focus,
+.sound-stage:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
+.sound-stage:active {
+  transform: scale(0.985);
+}
+
+.breathing-orb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  mix-blend-mode: lighten;
+  opacity: 0.94;
+  transform: scale(0.98);
+  transition: transform 900ms ease, opacity 400ms ease;
+}
+
+.breathing-orb.is-playing {
+  animation: orb-breathe 5.6s ease-in-out infinite;
+}
+
+.orb-status {
+  position: absolute;
+  display: grid;
+  gap: 9px;
+  place-items: center;
+  color: rgba(253, 240, 239, 0.66);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
+
+.orb-loop-symbol {
+  color: rgba(255, 205, 175, 0.82);
+  font-size: 32px;
+  font-weight: 300;
+  line-height: 0.7;
+}
+
+.sound-selector,
+.timer-control,
+.sheet-option {
+  border: 0;
+  color: inherit;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sound-selector {
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 62px;
+  margin-top: 0;
+  padding: 9px 4px 9px 8px;
+  border-top: 1px solid rgba(248, 218, 214, 0.12);
+  background: transparent;
+  text-align: left;
+}
+
+.sound-selector span {
+  display: grid;
+  gap: 8px;
+}
+
+.sound-selector strong {
+  color: #fff6f1;
+  font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.sound-selector small {
+  color: rgba(247, 224, 224, 0.6);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+}
+
+.sound-selector > svg,
+.timer-control > svg {
+  width: 22px;
+  height: 22px;
+  color: rgba(255, 222, 206, 0.68);
+}
+
+.timer-control {
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 64px;
+  margin-top: 24px;
+  padding: 0 18px 0 22px;
+  border: 1px solid rgba(248, 218, 214, 0.1);
+  border-radius: 32px;
+  background: rgba(255, 237, 238, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  color: rgba(255, 241, 236, 0.86);
+  font-size: 16px;
+  letter-spacing: 0.07em;
+  text-align: left;
+  backdrop-filter: blur(16px);
+}
+
+.timer-leading {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.timer-leading svg {
+  width: 25px;
+  height: 25px;
+  color: rgba(255, 211, 183, 0.8);
+}
+
+.sleep-footer {
+  z-index: 1;
+  flex: none;
+  margin-top: 18px;
+  padding-top: 0;
+  color: rgba(249, 224, 220, 0.42);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-align: center;
+  text-indent: 0.18em;
+}
+
+.bottom-sheet {
+  min-height: 260px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 0;
+  background: rgba(39, 29, 43, 0.96);
+  box-shadow: 0 -16px 54px rgba(0, 0, 0, 0.38);
+  color: #fff3ef;
+  backdrop-filter: blur(26px);
+}
+
+.sheet-overlay {
+  background: rgba(6, 3, 8, 0.58);
+  backdrop-filter: blur(5px);
+}
+
+.sheet-handle {
+  background: rgba(255, 235, 230, 0.26);
+}
+
+.sheet-title {
+  color: #fff5f1;
+  font-family: "Songti SC", "STSong", "Noto Serif SC", serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+.sheet-description {
+  color: rgba(255, 227, 220, 0.58);
+  letter-spacing: 0.03em;
+}
+
+.sheet-content {
+  padding: 0 18px 28px;
+}
+
+.sheet-options {
+  display: grid;
+  gap: 8px;
+}
+
+.sheet-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 60px;
+  padding: 10px 14px 10px 16px;
+  border: 1px solid transparent;
+  border-radius: 16px;
+  background: rgba(255, 242, 238, 0.055);
+  color: #fff5f1;
+  text-align: left;
+}
+
+.sheet-option[data-active="true"] {
+  border-color: rgba(251, 186, 143, 0.38);
+  background: rgba(247, 180, 137, 0.12);
+}
+
+.sheet-option-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.sheet-option-copy strong {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+.sheet-option-copy small {
+  color: rgba(255, 222, 214, 0.52);
+  font-size: 12px;
+}
+
+.sheet-option-mark {
+  color: #ffbd8f;
+  font-size: 20px;
+}
+
+@keyframes orb-breathe {
+  0%,
+  100% {
+    opacity: 0.86;
+    transform: scale(0.97);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.035);
+  }
+}
+
+@media (max-height: 760px) {
+  .sleep-screen {
+    padding-top: 56px;
+  }
+
+  .sound-stage {
+    width: min(100%, 320px);
+    height: 292px;
+    margin-top: 18px;
+  }
+
+  .sound-selector strong {
+    font-size: 22px;
+  }
+
+  .sound-selector {
+    min-height: 56px;
+  }
+
+  .timer-control {
+    min-height: 58px;
+    margin-top: 16px;
+  }
+
+  .sleep-footer {
+    margin-top: 14px;
+  }
+
+}
