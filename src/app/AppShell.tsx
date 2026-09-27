@@ -51,6 +51,8 @@ export function AppShell() {
   const trackTransitionRef = useRef(false);
   const manualStopRef = useRef(false);
   const napAlarmRef = useRef<number | null>(null);
+  const startInFlightRef = useRef(false);
+  const [isStarting, setIsStarting] = useState(false);
 
   useEffect(() => controller.subscribe(setAudioState), [controller]);
   useEffect(() => {
@@ -68,7 +70,7 @@ export function AppShell() {
   useEffect(() => () => { if (napAlarmRef.current !== null) window.clearTimeout(napAlarmRef.current); }, []);
 
   const applyTracks = useCallback(async (nextTracks: SceneTrack[], nextScene?: SleepScene) => {
-    const trimmed = nextTracks.slice(0, 3);
+    const trimmed = nextTracks.length ? nextTracks.slice(0, 3) : [{ soundId: "white", volume: soundCatalog.find((sound) => sound.id === "white")?.defaultVolume ?? 0.58 }];
     trackTransitionRef.current = true;
     setTracks(trimmed);
     if (nextScene) setCurrentScene(nextScene);
@@ -80,16 +82,35 @@ export function AppShell() {
   }, [controller]);
 
   const startPlayback = useCallback(async (minutes = timerMinutes, nap = false) => {
-    const timer = createSleepTimer(minutes, fadeMinutes, nap, alarmTone);
-    controller.setTimer(timer);
-    if (timer) setNow(Date.now());
-    const session = { id: `${Date.now()}`, startedAt: Date.now(), sceneId: currentScene.id, nap, alarmTone } satisfies SleepSession;
-    activeSessionRef.current = session;
-    setHistory(saveSleepSession(session));
-    await controller.play();
-  }, [alarmTone, controller, currentScene.id, fadeMinutes, timerMinutes]);
+    if (startInFlightRef.current || audioState.isPlaying) return;
+    startInFlightRef.current = true;
+    setIsStarting(true);
+    const startedAt = Date.now();
+    const timer = createSleepTimer(minutes, fadeMinutes, nap, alarmTone, startedAt);
+    const session = { id: `${startedAt}`, startedAt, sceneId: currentScene.id, nap, alarmTone } satisfies SleepSession;
+    try {
+      controller.setTimer(timer);
+      if (timer) setNow(startedAt);
+      activeSessionRef.current = session;
+      setHistory(saveSleepSession(session));
+      await controller.play();
+      if (!controller.getState().isPlaying) {
+        activeSessionRef.current = null;
+        controller.setTimer(null);
+        setHistory(saveSleepSession({ ...session, endedAt: Date.now() }));
+      }
+    } catch {
+      activeSessionRef.current = null;
+      controller.setTimer(null);
+      setHistory(saveSleepSession({ ...session, endedAt: Date.now() }));
+    } finally {
+      startInFlightRef.current = false;
+      setIsStarting(false);
+    }
+  }, [alarmTone, audioState.isPlaying, controller, currentScene.id, fadeMinutes, timerMinutes]);
 
   const togglePlayback = useCallback(() => {
+    if (startInFlightRef.current) return;
     if (audioState.isPlaying) {
       manualStopRef.current = true;
       controller.pause();
@@ -190,7 +211,7 @@ export function AppShell() {
     if (view === "ritual") return <BedtimeRitualPage onClose={() => setView("tonight")} onComplete={() => { setView("tonight"); void startPlayback(); }} />;
     if (view === "sounds") return <SoundsPage activeSoundIds={tracks.map((track) => track.soundId)} category={category} favorites={favorites} onAddSound={addSound} onFavorite={(id) => setFavorites(toggleFavorite(id))} onOpenMixer={() => setView("mixer")} onPlayScene={chooseScene} onPlaySound={chooseSound} query={query} recent={recent} scenes={scenes} setCategory={setCategory} setQuery={setQuery} sounds={displayedSounds} />;
     if (view === "profile") return <ProfilePage alarmTone={alarmTone} favorites={favorites} history={history} onAlarmToneChange={chooseAlarmTone} onFavorite={(id) => setFavorites(toggleFavorite(id))} onPlayScene={chooseScene} recent={recent} scenes={scenes} />;
-    return <TonightPage isPlaying={audioState.isPlaying} mood={mood} onAdjustTrack={updateTrackVolume} onOpenBreathing={() => setView("breathing")} onOpenNap={() => setView("nap")} onOpenRitual={() => setView("ritual")} onOpenSounds={() => setView("sounds")} onOpenTimer={() => setSheet("timer")} onToggle={togglePlayback} scene={currentScene} setMood={chooseMood} timerLabel={timerLabel} tracks={tracks} />;
+    return <TonightPage isPlaying={audioState.isPlaying} isStarting={isStarting} mood={mood} onAdjustTrack={updateTrackVolume} onOpenBreathing={() => setView("breathing")} onOpenNap={() => setView("nap")} onOpenRitual={() => setView("ritual")} onOpenSounds={() => setView("sounds")} onOpenTimer={() => setSheet("timer")} onToggle={togglePlayback} scene={currentScene} setMood={chooseMood} timerLabel={timerLabel} tracks={tracks} />;
   };
 
   return <div className="v17-shell"><MobileScroll className="app-screen sleep-app v17-scroll"><img className="v17-horizon" src="/assets/sleep/night-horizon.png" alt="" aria-hidden="true" draggable={false} />{renderPage()}</MobileScroll>{view !== "mixer" && view !== "breathing" && view !== "nap" && view !== "ritual" ? <BottomNav active={view} onChange={setView} /> : null}<BottomSheet description={sheet === "timer" ? "时间到了，声音会慢慢淡出" : "为混音选择一个声音"} onOpenChange={(open) => setSheet(open ? sheet : null)} open={sheet !== null} snap={0.62} title={sheet === "timer" ? "睡眠定时" : "添加声音"}>{sheet === "timer" ? <div className="v17-sheet-sections"><div><span>播放时间</span><div className="v17-sheet-options">{[null, 15, 30, 45, 60].map((minutes) => <button data-active={timerMinutes === minutes ? "true" : "false"} key={String(minutes)} onClick={() => chooseTimer(minutes)} type="button">{minutes === null ? "不定时" : `${minutes} 分钟`}</button>)}</div></div><div><span>渐弱关闭</span><div className="v17-sheet-options">{([0, 1, 3, 5, 10] as const).map((minutes) => <button data-active={fadeMinutes === minutes ? "true" : "false"} key={minutes} onClick={() => chooseFade(minutes)} type="button">{minutes === 0 ? "关闭" : `${minutes} 分钟`}</button>)}</div></div></div> : <div className="v17-sheet-sound-list">{soundCatalog.filter((sound) => !tracks.some((track) => track.soundId === sound.id)).slice(0, 12).map((sound) => <button key={sound.id} onClick={() => addSound(sound)} type="button"><span><i>{sound.glyph}</i><strong>{sound.name}</strong></span><small>{sound.description}</small></button>)}</div>}</BottomSheet></div>;

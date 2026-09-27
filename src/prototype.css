@@ -806,6 +806,15 @@
   transform: scale(0.985);
 }
 
+.v17-orb-stage:disabled {
+  cursor: wait;
+  opacity: 0.84;
+}
+
+.v17-orb-stage[aria-busy="true"] .v17-orb-image {
+  animation: orb-breathe 2.2s ease-in-out infinite;
+}
+
 .v17-orb-image {
   width: 100%;
   height: 100%;
@@ -1562,5 +1571,41 @@ input[type="range"] {
   .v17-orb-stage {
     min-height: 230px;
     height: min(62vw, 280px);
+  }
+}
+
+@media (max-height: 900px) and (min-width: 360px) {
+  .v17-page {
+    gap: 10px;
+    padding-top: 44px;
+    padding-bottom: 116px;
+  }
+
+  .v17-orb-stage {
+    height: min(58vw, 240px);
+    min-height: 220px;
+  }
+
+  .v17-recommendation {
+    gap: 8px;
+    padding: 12px 0 10px;
+  }
+
+  .v17-track-summary {
+    gap: 4px;
+    padding: 3px 0;
+  }
+
+  .v17-tonight-actions {
+    gap: 6px;
+  }
+
+  .v17-tonight-actions button {
+    padding: 0 8px;
+    font-size: 11px;
+  }
+
+  .v17-timer-pill {
+    min-height: 56px;
   }
 }

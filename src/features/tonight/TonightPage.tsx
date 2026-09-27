@@ -15,6 +15,7 @@ export function TonightPage({
   scene,
   tracks,
   isPlaying,
+  isStarting,
   timerLabel,
   onToggle,
   onOpenSounds,
@@ -29,6 +30,7 @@ export function TonightPage({
   scene: SleepScene;
   tracks: SceneTrack[];
   isPlaying: boolean;
+  isStarting: boolean;
   timerLabel: string;
   onToggle: () => void;
   onOpenSounds: () => void;
@@ -49,9 +51,9 @@ export function TonightPage({
         {moods.map((item) => <button className="v17-mood-chip" data-active={mood === item.id ? "true" : "false"} key={item.id} onClick={() => setMood(item.id)} type="button"><span aria-hidden="true">{item.glyph}</span>{item.label}</button>)}
       </div>
 
-      <button className={`v17-orb-stage ${isPlaying ? "is-playing" : ""}`} aria-label={isPlaying ? "暂停睡眠声音" : "开始睡觉"} aria-pressed={isPlaying} onClick={onToggle} type="button">
+      <button className={`v17-orb-stage ${isPlaying ? "is-playing" : ""}`} aria-busy={isStarting} aria-label={isStarting ? "准备播放" : isPlaying ? "暂停睡眠声音" : "开始睡觉"} aria-pressed={isPlaying} disabled={isStarting} onClick={onToggle} type="button">
         <img className="v17-orb-image" src="/assets/sleep/breathing-orb.png" alt="" aria-hidden="true" draggable={false} />
-        <span className="v17-orb-copy"><strong>{isPlaying ? "正在放松" : "开始睡觉"}</strong><small>{isPlaying ? "声音正在陪你" : "轻触光环，今晚不必再想"}</small></span>
+        <span className="v17-orb-copy"><strong>{isStarting ? "准备中" : isPlaying ? "正在放松" : "开始睡觉"}</strong><small>{isStarting ? "正在准备今晚的声音" : isPlaying ? "声音正在陪你" : "轻触光环，今晚不必再想"}</small></span>
       </button>
 
       <section className="v17-recommendation" aria-label="今晚推荐">

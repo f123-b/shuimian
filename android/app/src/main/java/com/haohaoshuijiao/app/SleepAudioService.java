@@ -115,10 +115,15 @@ public class SleepAudioService extends MediaSessionService {
     @Override
     public void onCreate() {
         super.onCreate();
-        mediaSession = new MediaSession.Builder(this, newPlayer("white"))
+        trackStates.add(new TrackState("white", 0.58f, false));
+        ExoPlayer initialPlayer = newPlayer("white");
+        initialPlayer.setVolume(0.58f);
+        attachPlayerListener(initialPlayer);
+        players.add(initialPlayer);
+        stateTracksJson = serializeTracks();
+        mediaSession = new MediaSession.Builder(this, initialPlayer)
                 .setId("haohao-sleep")
                 .build();
-        rebuildPlayers();
         sendStateChanged();
     }
 
@@ -159,18 +164,22 @@ public class SleepAudioService extends MediaSessionService {
         players.clear();
     }
 
+    private void attachPlayerListener(ExoPlayer player) {
+        player.addListener(new Player.Listener() {
+            @Override public void onIsPlayingChanged(boolean isPlaying) {
+                playing = isPlaying;
+                sendStateChanged();
+            }
+        });
+    }
+
     private void rebuildPlayers() {
         releasePlayers();
         if (trackStates.isEmpty()) trackStates.add(new TrackState("white", 0.58f, false));
         for (TrackState state : trackStates) {
             ExoPlayer player = newPlayer(state.soundId);
             player.setVolume(state.muted ? 0f : state.volume);
-            player.addListener(new Player.Listener() {
-                @Override public void onIsPlayingChanged(boolean isPlaying) {
-                    playing = isPlaying;
-                    sendStateChanged();
-                }
-            });
+            attachPlayerListener(player);
             players.add(player);
         }
         stateTracksJson = serializeTracks();

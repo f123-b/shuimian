@@ -133,13 +133,43 @@ export class WebAudioEngine implements AudioEngine {
   }
 
   private clearNodes() {
-    this.nodes.forEach(({ source, filter, gain }) => {
+    const nodes = this.nodes;
+    this.nodes = new Map();
+    nodes.forEach(({ source, filter, gain }) => {
       try { source.stop(); } catch { /* already stopped */ }
       source.disconnect();
       filter.disconnect();
       gain.disconnect();
     });
-    this.nodes.clear();
+  }
+
+  private targetGain(track: AudioTrack, fadeFactor = 1) {
+    return track.muted ? 0.0001 : Math.max(0.0001, track.volume * fadeFactor);
+  }
+
+  private createNodes(context: AudioContext, loaded: Array<{ track: AudioTrack; buffer: AudioBuffer }>, fadeIn: boolean) {
+    const nodes = new Map<string, TrackNodes>();
+    const now = context.currentTime;
+    const timerFactor = readSleepTimer(this.timer)?.fadeFactor ?? 1;
+    loaded.forEach(({ track, buffer }) => {
+      const sound = getSound(track.soundId);
+      const source = context.createBufferSource();
+      const filter = filterFor(context, sound);
+      const gain = context.createGain();
+      const target = this.targetGain(track, timerFactor);
+      source.buffer = buffer;
+      source.loop = true;
+      source.connect(filter).connect(gain).connect(this.masterGain!);
+      if (fadeIn) {
+        gain.gain.setValueAtTime(0.0001, now);
+        if (target > 0.0001) gain.gain.linearRampToValueAtTime(target, now + 0.18);
+      } else {
+        gain.gain.value = target;
+      }
+      source.start();
+      nodes.set(track.soundId, { source, filter, gain });
+    });
+    return nodes;
   }
 
   private updateTimerGain() {
@@ -174,19 +204,7 @@ export class WebAudioEngine implements AudioEngine {
     const loaded = await Promise.all(tracks.map(async (track) => ({ track, buffer: await loadSoundBuffer(context, getSound(track.soundId)) })));
     if (request !== this.requestId) return;
     this.clearNodes();
-    loaded.forEach(({ track, buffer }) => {
-      const sound = getSound(track.soundId);
-      const source = context.createBufferSource();
-      const filter = filterFor(context, sound);
-      const gain = context.createGain();
-      source.buffer = buffer;
-      source.loop = true;
-      const timerFactor = readSleepTimer(this.timer)?.fadeFactor ?? 1;
-      gain.gain.value = track.muted ? 0.0001 : Math.max(0.0001, track.volume * timerFactor);
-      source.connect(filter).connect(gain).connect(this.masterGain!);
-      source.start();
-      this.nodes.set(track.soundId, { source, filter, gain });
-    });
+    this.nodes = this.createNodes(context, loaded, false);
     this.isPlaying = true;
     this.startTimerTicker();
     this.emit();
@@ -208,20 +226,36 @@ export class WebAudioEngine implements AudioEngine {
   }
 
   async setTracks(tracks: AudioTrack[]) {
-    this.tracks = tracks.slice(0, 3).map((track) => ({ ...track, volume: Math.max(0, Math.min(1, track.volume)) }));
-    if (this.isPlaying) {
-      this.pause();
-      await this.play();
-    } else {
+    const nextTracks = tracks.slice(0, 3).map((track) => ({ ...track, volume: Math.max(0, Math.min(1, track.volume)) }));
+    this.tracks = nextTracks.length ? nextTracks : [{ soundId: "white", volume: getSound("white").defaultVolume }];
+    if (!this.isPlaying) {
       this.emit();
+      return;
     }
+    const context = this.ensureContext();
+    if (!context) return;
+    const request = ++this.requestId;
+    const loaded = await Promise.all(this.tracks.map(async (track) => ({ track, buffer: await loadSoundBuffer(context, getSound(track.soundId)) })));
+    if (request !== this.requestId || !this.isPlaying) return;
+    const previousNodes = this.nodes;
+    this.nodes = this.createNodes(context, loaded, true);
+    const fadeStart = context.currentTime;
+    previousNodes.forEach(({ gain }) => gain.gain.setTargetAtTime(0.0001, fadeStart, 0.06));
+    window.setTimeout(() => previousNodes.forEach(({ source, filter, gain }) => {
+      try { source.stop(); } catch { /* already stopped */ }
+      source.disconnect();
+      filter.disconnect();
+      gain.disconnect();
+    }), 260);
+    this.emit();
   }
 
   setVolume(soundId: string, volume: number) {
     const next = Math.max(0, Math.min(1, volume));
     this.tracks = this.tracks.map((track) => track.soundId === soundId ? { ...track, volume: next } : track);
     const node = this.nodes.get(soundId);
-    if (node && this.context) node.gain.gain.setTargetAtTime(next, this.context.currentTime, 0.08);
+    const track = this.tracks.find((item) => item.soundId === soundId);
+    if (node && this.context && track) node.gain.gain.setTargetAtTime(this.targetGain(track, readSleepTimer(this.timer)?.fadeFactor ?? 1), this.context.currentTime, 0.08);
     this.emit();
   }
 
@@ -229,14 +263,17 @@ export class WebAudioEngine implements AudioEngine {
     this.tracks = this.tracks.map((track) => track.soundId === soundId ? { ...track, muted } : track);
     const node = this.nodes.get(soundId);
     const track = this.tracks.find((item) => item.soundId === soundId);
-    if (node && this.context) node.gain.gain.setTargetAtTime(muted ? 0.0001 : track?.volume ?? getSound(soundId).defaultVolume, this.context.currentTime, 0.08);
+    if (node && this.context && track) node.gain.gain.setTargetAtTime(this.targetGain(track, readSleepTimer(this.timer)?.fadeFactor ?? 1), this.context.currentTime, 0.08);
     this.emit();
   }
 
   setTimer(timer: SleepTimerConfig | null) {
     this.timer = timer;
     if (this.isPlaying && timer) this.startTimerTicker();
-    if (!timer && this.context) this.nodes.forEach(({ gain }, soundId) => gain.gain.setTargetAtTime(this.tracks.find((track) => track.soundId === soundId)?.volume ?? 0.5, this.context!.currentTime, 0.15));
+    if (!timer && this.context) this.nodes.forEach(({ gain }, soundId) => {
+      const track = this.tracks.find((item) => item.soundId === soundId);
+      gain.gain.setTargetAtTime(track ? this.targetGain(track) : 0.0001, this.context!.currentTime, 0.15);
+    });
     this.emit();
   }
 
