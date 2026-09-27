@@ -32,6 +32,7 @@ public class SleepAudioService extends MediaSessionService {
     public static final String ACTION_SET_VOLUME = "com.haohaoshuijiao.app.SET_VOLUME";
     public static final String ACTION_SET_MUTED = "com.haohaoshuijiao.app.SET_MUTED";
     public static final String ACTION_SET_TIMER = "com.haohaoshuijiao.app.SET_TIMER";
+    public static final String ACTION_STATE_CHANGED = "com.haohaoshuijiao.app.STATE_CHANGED";
     public static final String EXTRA_TRACKS = "tracks";
     public static final String EXTRA_SOUND_ID = "soundId";
     public static final String EXTRA_VOLUME = "volume";
@@ -41,8 +42,15 @@ public class SleepAudioService extends MediaSessionService {
     public static final String EXTRA_ENDS_AT = "endsAt";
     public static final String EXTRA_FADE_MINUTES = "fadeMinutes";
     public static final String EXTRA_ALARM_ON_END = "alarmOnEnd";
+    public static final String EXTRA_ALARM_TONE = "alarmTone";
 
     private static volatile boolean playing = false;
+    private static volatile String stateTracksJson = "[]";
+    private static volatile long stateStartedAt = 0L;
+    private static volatile long stateEndsAt = 0L;
+    private static volatile int stateFadeMinutes = 3;
+    private static volatile boolean stateAlarmOnEnd = false;
+    private static volatile String stateAlarmTone = "dawn";
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final List<TrackState> trackStates = new ArrayList<>();
     private final List<ExoPlayer> players = new ArrayList<>();
@@ -66,16 +74,42 @@ public class SleepAudioService extends MediaSessionService {
         long endsAt;
         int fadeMinutes;
         boolean alarmOnEnd;
-        SleepTimer(long startedAt, long endsAt, int fadeMinutes, boolean alarmOnEnd) {
+        String alarmTone;
+        SleepTimer(long startedAt, long endsAt, int fadeMinutes, boolean alarmOnEnd, String alarmTone) {
             this.startedAt = startedAt;
             this.endsAt = endsAt;
             this.fadeMinutes = fadeMinutes;
             this.alarmOnEnd = alarmOnEnd;
+            this.alarmTone = alarmTone;
         }
     }
 
     public static boolean isPlaying() {
         return playing;
+    }
+
+    public static String tracksJson() {
+        return stateTracksJson;
+    }
+
+    public static long timerStartedAt() {
+        return stateStartedAt;
+    }
+
+    public static long timerEndsAt() {
+        return stateEndsAt;
+    }
+
+    public static int timerFadeMinutes() {
+        return stateFadeMinutes;
+    }
+
+    public static boolean timerAlarmOnEnd() {
+        return stateAlarmOnEnd;
+    }
+
+    public static String timerAlarmTone() {
+        return stateAlarmTone;
     }
 
     @Override
@@ -85,6 +119,7 @@ public class SleepAudioService extends MediaSessionService {
                 .setId("haohao-sleep")
                 .build();
         rebuildPlayers();
+        sendStateChanged();
     }
 
     private ExoPlayer newPlayer(String soundId) {
@@ -110,6 +145,12 @@ public class SleepAudioService extends MediaSessionService {
     private String assetUri(String soundId) {
         String file = "white-noise-cc0.mp3";
         if ("white-soft".equals(soundId)) file = "white-noise-cc0.wav";
+        else if ("rain-light".equals(soundId)) file = "rain-real.mp3";
+        else if ("rain-window".equals(soundId)) file = "rain-window-real.mp3";
+        else if ("rain-thunder".equals(soundId)) file = "rain-thunder-real.mp3";
+        else if ("wind".equals(soundId)) file = "wind-real.mp3";
+        else if ("ocean".equals(soundId)) file = "ocean-real.mp3";
+        else if ("river".equals(soundId)) file = "tide-real.mp3";
         return "asset:///public/assets/audio/" + file;
     }
 
@@ -124,9 +165,44 @@ public class SleepAudioService extends MediaSessionService {
         for (TrackState state : trackStates) {
             ExoPlayer player = newPlayer(state.soundId);
             player.setVolume(state.muted ? 0f : state.volume);
+            player.addListener(new Player.Listener() {
+                @Override public void onIsPlayingChanged(boolean isPlaying) {
+                    playing = isPlaying;
+                    sendStateChanged();
+                }
+            });
             players.add(player);
         }
+        stateTracksJson = serializeTracks();
         if (!players.isEmpty() && mediaSession != null) mediaSession.setPlayer(players.get(0));
+    }
+
+    private String serializeTracks() {
+        JSONArray array = new JSONArray();
+        for (TrackState state : trackStates) {
+            JSONObject item = new JSONObject();
+            try {
+                item.put("soundId", state.soundId);
+                item.put("volume", state.volume);
+                item.put("muted", state.muted);
+            } catch (JSONException ignored) {
+                // Values are primitive and should always serialize.
+            }
+            array.put(item);
+        }
+        return array.toString();
+    }
+
+    private void sendStateChanged() {
+        Intent intent = new Intent(ACTION_STATE_CHANGED).setPackage(getPackageName());
+        intent.putExtra("isPlaying", playing);
+        intent.putExtra(EXTRA_TRACKS, stateTracksJson);
+        intent.putExtra(EXTRA_STARTED_AT, stateStartedAt);
+        intent.putExtra(EXTRA_ENDS_AT, stateEndsAt);
+        intent.putExtra(EXTRA_FADE_MINUTES, stateFadeMinutes);
+        intent.putExtra(EXTRA_ALARM_ON_END, stateAlarmOnEnd);
+        intent.putExtra(EXTRA_ALARM_TONE, stateAlarmTone);
+        sendBroadcast(intent);
     }
 
     private void applyVolume(int index, float factor) {
@@ -148,8 +224,9 @@ public class SleepAudioService extends MediaSessionService {
                 for (int index = 0; index < players.size(); index++) applyVolume(index, factor);
                 if (remaining <= 0) {
                     boolean alarmOnEnd = timer.alarmOnEnd;
+                    String alarmTone = timer.alarmTone;
                     stopPlayback();
-                    if (alarmOnEnd) playSoftAlarm();
+                    if (alarmOnEnd) playSoftAlarm(alarmTone);
                 } else {
                     handler.postDelayed(this, 1000L);
                 }
@@ -163,11 +240,13 @@ public class SleepAudioService extends MediaSessionService {
         for (ExoPlayer player : players) player.play();
         playing = true;
         scheduleTimerTick();
+        sendStateChanged();
     }
 
     private void pausePlayback() {
         for (ExoPlayer player : players) player.pause();
         playing = false;
+        sendStateChanged();
     }
 
     private void stopPlayback() {
@@ -176,6 +255,10 @@ public class SleepAudioService extends MediaSessionService {
         if (timerRunnable != null) handler.removeCallbacks(timerRunnable);
         timerRunnable = null;
         timer = null;
+        stateStartedAt = 0L;
+        stateEndsAt = 0L;
+        stateAlarmOnEnd = false;
+        sendStateChanged();
     }
 
     private void updateTracks(String serialized) {
@@ -188,7 +271,9 @@ public class SleepAudioService extends MediaSessionService {
             }
             boolean wasPlaying = playing;
             rebuildPlayers();
+            stateTracksJson = serializeTracks();
             if (wasPlaying) playPlayback();
+            else sendStateChanged();
         } catch (JSONException ignored) {
             // Keep the last valid mixer state if the bridge receives malformed data.
         }
@@ -213,6 +298,7 @@ public class SleepAudioService extends MediaSessionService {
         for (int index = 0; index < trackStates.size(); index++) if (trackStates.get(index).soundId.equals(soundId)) {
             trackStates.get(index).volume = (float) Math.max(0, Math.min(1, volume));
             applyVolume(index, 1f);
+            sendStateChanged();
         }
     }
 
@@ -220,16 +306,31 @@ public class SleepAudioService extends MediaSessionService {
         for (int index = 0; index < trackStates.size(); index++) if (trackStates.get(index).soundId.equals(soundId)) {
             trackStates.get(index).muted = muted;
             applyVolume(index, 1f);
+            sendStateChanged();
         }
     }
 
     private void updateTimer(Intent intent) {
-        if (intent.getBooleanExtra(EXTRA_TIMER_CLEAR, false)) timer = null;
-        else timer = new SleepTimer(intent.getLongExtra(EXTRA_STARTED_AT, 0L), intent.getLongExtra(EXTRA_ENDS_AT, 0L), intent.getIntExtra(EXTRA_FADE_MINUTES, 3), intent.getBooleanExtra(EXTRA_ALARM_ON_END, false));
+        if (intent.getBooleanExtra(EXTRA_TIMER_CLEAR, false)) {
+            timer = null;
+            stateStartedAt = 0L;
+            stateEndsAt = 0L;
+            stateAlarmOnEnd = false;
+        } else {
+            String alarmTone = intent.getStringExtra(EXTRA_ALARM_TONE);
+            if (alarmTone == null || alarmTone.isEmpty()) alarmTone = "dawn";
+            timer = new SleepTimer(intent.getLongExtra(EXTRA_STARTED_AT, 0L), intent.getLongExtra(EXTRA_ENDS_AT, 0L), intent.getIntExtra(EXTRA_FADE_MINUTES, 3), intent.getBooleanExtra(EXTRA_ALARM_ON_END, false), alarmTone);
+            stateStartedAt = timer.startedAt;
+            stateEndsAt = timer.endsAt;
+            stateFadeMinutes = timer.fadeMinutes;
+            stateAlarmOnEnd = timer.alarmOnEnd;
+            stateAlarmTone = timer.alarmTone;
+        }
         scheduleTimerTick();
+        sendStateChanged();
     }
 
-    private void playSoftAlarm() {
+    private void playSoftAlarm(String toneId) {
         new Thread(() -> {
             final int sampleRate = 44100;
             final int durationMs = 30_000;
@@ -245,7 +346,8 @@ public class SleepAudioService extends MediaSessionService {
                     double progress = (written + index) / (double) totalSamples;
                     double envelope = Math.min(1.0, progress * 3.0) * Math.min(1.0, (1.0 - progress) * 4.0);
                     double time = (written + index) / (double) sampleRate;
-                    double tone = Math.sin(2.0 * Math.PI * 220.0 * time) * 0.55 + Math.sin(2.0 * Math.PI * 277.18 * time) * 0.3 + Math.sin(2.0 * Math.PI * 329.63 * time) * 0.15;
+                    double[] frequencies = "wood".equals(toneId) ? new double[] { 261.63, 329.63, 392.0 } : "tide".equals(toneId) ? new double[] { 174.61, 220.0, 261.63 } : new double[] { 220.0, 277.18, 329.63 };
+                    double tone = Math.sin(2.0 * Math.PI * frequencies[0] * time) * 0.55 + Math.sin(2.0 * Math.PI * frequencies[1] * time) * 0.3 + Math.sin(2.0 * Math.PI * frequencies[2] * time) * 0.15;
                     buffer[index] = (short) (tone * envelope * 0.12 * Short.MAX_VALUE);
                 }
                 alarm.write(buffer, 0, count);

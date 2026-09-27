@@ -6,6 +6,7 @@ const defaultSettings: SleepSettings = {
   defaultFadeMinutes: 3,
   wakeTime: "07:30",
   masterVolume: 1,
+  alarmTone: "dawn",
 };
 
 export function loadSettings() {

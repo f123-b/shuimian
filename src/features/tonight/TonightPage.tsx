@@ -21,6 +21,7 @@ export function TonightPage({
   onOpenTimer,
   onOpenBreathing,
   onOpenNap,
+  onOpenRitual,
   onAdjustTrack,
 }: {
   mood: MoodId;
@@ -34,6 +35,7 @@ export function TonightPage({
   onOpenTimer: () => void;
   onOpenBreathing: () => void;
   onOpenNap: () => void;
+  onOpenRitual: () => void;
   onAdjustTrack: (soundId: string, volume: number) => void;
 }) {
   return (
@@ -58,7 +60,7 @@ export function TonightPage({
         <div className="v17-track-summary">
           {tracks.map((track) => <label key={track.soundId}><span><i>{getSound(track.soundId).glyph}</i>{getSound(track.soundId).name}</span><input aria-label={`${getSound(track.soundId).name}音量`} max="1" min="0" onChange={(event) => onAdjustTrack(track.soundId, Number(event.target.value))} step="0.01" type="range" value={track.volume} /></label>)}
         </div>
-        <div className="v17-tonight-actions"><button onClick={onOpenSounds} type="button">调整声音</button><button onClick={onOpenBreathing} type="button">睡前呼吸</button></div>
+        <div className="v17-tonight-actions"><button onClick={onOpenSounds} type="button">调整声音</button><button onClick={onOpenBreathing} type="button">睡前呼吸</button><button onClick={onOpenRitual} type="button">睡前仪式</button></div>
       </section>
 
       <button className="v17-timer-pill" onClick={onOpenTimer} type="button"><span className="v17-timer-icon" aria-hidden="true">◷</span><span>{timerLabel}</span><ChevronRightIcon /></button>

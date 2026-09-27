@@ -1,6 +1,8 @@
 package com.haohaoshuijiao.app;
 
 import android.content.Context;
+import android.content.BroadcastReceiver;
+import android.content.IntentFilter;
 import android.content.Intent;
 import androidx.core.content.ContextCompat;
 import com.getcapacitor.JSObject;
@@ -13,6 +15,8 @@ import org.json.JSONObject;
 
 @CapacitorPlugin(name = "SleepAudio")
 public class SleepAudioPlugin extends Plugin {
+    private BroadcastReceiver stateReceiver;
+
     private Context context() {
         return getContext();
     }
@@ -20,6 +24,43 @@ public class SleepAudioPlugin extends Plugin {
     private void dispatch(String action, Intent intent) {
         intent.setAction(action);
         ContextCompat.startForegroundService(context(), intent);
+    }
+
+    @Override
+    public void load() {
+        super.load();
+        stateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context receiverContext, Intent intent) {
+                notifyListeners("playbackStateChanged", stateFromIntent(intent));
+            }
+        };
+        ContextCompat.registerReceiver(context(), stateReceiver, new IntentFilter(SleepAudioService.ACTION_STATE_CHANGED), ContextCompat.RECEIVER_NOT_EXPORTED);
+    }
+
+    private JSObject stateFromIntent(Intent intent) {
+        JSObject result = new JSObject();
+        result.put("isPlaying", intent.getBooleanExtra("isPlaying", false));
+        try {
+            String tracks = intent.getStringExtra(SleepAudioService.EXTRA_TRACKS);
+            result.put("tracks", new JSONArray(tracks == null ? "[]" : tracks));
+        } catch (Exception ignored) {
+            result.put("tracks", new JSONArray());
+        }
+        long endsAt = intent.getLongExtra(SleepAudioService.EXTRA_ENDS_AT, 0L);
+        if (endsAt > 0L) {
+            JSObject timer = new JSObject();
+            timer.put("startedAt", intent.getLongExtra(SleepAudioService.EXTRA_STARTED_AT, 0L));
+            timer.put("endsAt", endsAt);
+            timer.put("fadeMinutes", intent.getIntExtra(SleepAudioService.EXTRA_FADE_MINUTES, 3));
+            timer.put("alarmOnEnd", intent.getBooleanExtra(SleepAudioService.EXTRA_ALARM_ON_END, false));
+            String alarmTone = intent.getStringExtra(SleepAudioService.EXTRA_ALARM_TONE);
+            timer.put("alarmTone", alarmTone == null ? "dawn" : alarmTone);
+            result.put("timer", timer);
+        } else {
+            result.put("timer", null);
+        }
+        return result;
     }
 
     @PluginMethod
@@ -79,6 +120,7 @@ public class SleepAudioPlugin extends Plugin {
             intent.putExtra(SleepAudioService.EXTRA_ENDS_AT, timer.optLong("endsAt", 0L));
             intent.putExtra(SleepAudioService.EXTRA_FADE_MINUTES, timer.getInteger("fadeMinutes", 3));
             intent.putExtra(SleepAudioService.EXTRA_ALARM_ON_END, timer.optBoolean("alarmOnEnd", false));
+            intent.putExtra(SleepAudioService.EXTRA_ALARM_TONE, timer.optString("alarmTone", "dawn"));
         }
         dispatch(SleepAudioService.ACTION_SET_TIMER, intent);
         call.resolve();
@@ -88,7 +130,31 @@ public class SleepAudioPlugin extends Plugin {
     public void getState(PluginCall call) {
         JSObject result = new JSObject();
         result.put("isPlaying", SleepAudioService.isPlaying());
-        result.put("tracks", new JSONArray());
+        try {
+            result.put("tracks", new JSONArray(SleepAudioService.tracksJson()));
+        } catch (Exception ignored) {
+            result.put("tracks", new JSONArray());
+        }
+        if (SleepAudioService.timerEndsAt() > 0L) {
+            JSObject timer = new JSObject();
+            timer.put("startedAt", SleepAudioService.timerStartedAt());
+            timer.put("endsAt", SleepAudioService.timerEndsAt());
+            timer.put("fadeMinutes", SleepAudioService.timerFadeMinutes());
+            timer.put("alarmOnEnd", SleepAudioService.timerAlarmOnEnd());
+            timer.put("alarmTone", SleepAudioService.timerAlarmTone());
+            result.put("timer", timer);
+        } else {
+            result.put("timer", null);
+        }
         call.resolve(result);
+    }
+
+    @Override
+    protected void handleOnDestroy() {
+        if (stateReceiver != null) {
+            context().unregisterReceiver(stateReceiver);
+            stateReceiver = null;
+        }
+        super.handleOnDestroy();
     }
 }

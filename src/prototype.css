@@ -409,6 +409,255 @@
 
 }
 
+.v17-tonight-actions {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.v17-ritual-page {
+  align-content: start;
+}
+
+.v17-ritual-page .v17-page-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+}
+
+.v17-back-button,
+.v17-ritual-progress {
+  color: rgba(255, 224, 216, 0.56);
+  font-size: 12px;
+}
+
+.v17-back-button {
+  justify-self: start;
+  padding: 6px 0;
+}
+
+.v17-ritual-progress {
+  justify-self: end;
+}
+
+.v17-ritual-intro {
+  display: grid;
+  gap: 8px;
+  padding: 30px 8px 12px;
+  text-align: center;
+}
+
+.v17-ritual-kicker {
+  color: #e6ac8b;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.v17-ritual-intro h1 {
+  margin: 0;
+  color: rgba(255, 239, 232, 0.92);
+  font-size: clamp(27px, 7vw, 38px);
+  font-weight: 300;
+}
+
+.v17-ritual-intro p,
+.v17-ritual-card p {
+  margin: 0;
+  color: rgba(255, 224, 216, 0.52);
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.v17-ritual-card {
+  display: grid;
+  justify-items: center;
+  gap: 13px;
+  padding: 30px 22px 26px;
+  border: 1px solid rgba(255, 222, 209, 0.11);
+  border-radius: 28px;
+  background: linear-gradient(145deg, rgba(84, 54, 78, 0.42), rgba(30, 21, 35, 0.46));
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.18);
+  text-align: center;
+}
+
+.v17-ritual-orb {
+  display: grid;
+  width: 66px;
+  height: 66px;
+  place-items: center;
+  border: 1px solid rgba(255, 193, 152, 0.45);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 190, 143, 0.35), rgba(255, 190, 143, 0.03) 68%);
+  color: #ffd0ae;
+  box-shadow: 0 0 36px rgba(245, 170, 127, 0.15);
+  font-size: 19px;
+}
+
+.v17-ritual-step-hint {
+  color: rgba(255, 205, 181, 0.56);
+  font-size: 11px;
+}
+
+.v17-ritual-card h2 {
+  margin: 0;
+  color: rgba(255, 239, 232, 0.9);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.v17-primary-button {
+  min-height: 46px;
+  margin-top: 6px;
+  padding: 0 26px;
+  border: 1px solid rgba(255, 196, 157, 0.42);
+  border-radius: 16px;
+  background: rgba(255, 187, 144, 0.16);
+  color: #ffd2b5;
+  font-size: 13px;
+}
+
+.v17-ritual-dots {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  padding: 7px 0;
+}
+
+.v17-ritual-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(255, 224, 213, 0.22);
+  transition: width 180ms ease, background 180ms ease;
+}
+
+.v17-ritual-dots span[data-active="true"] {
+  width: 20px;
+  background: #eab18f;
+}
+
+.v17-ritual-skip {
+  justify-self: center;
+}
+
+.v17-week-section {
+  display: grid;
+  gap: 14px;
+}
+
+.v17-week-chart {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 9px;
+  height: 138px;
+  padding: 8px 4px 0;
+}
+
+.v17-week-column {
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  justify-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.v17-week-bar-track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  align-items: end;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 227, 216, 0.1);
+}
+
+.v17-week-bar {
+  display: block;
+  width: min(18px, 66%);
+  min-height: 4px;
+  border-radius: 9px 9px 3px 3px;
+  background: linear-gradient(180deg, #f3b693, rgba(164, 104, 137, 0.7));
+  box-shadow: 0 0 16px rgba(235, 163, 130, 0.13);
+}
+
+.v17-week-column strong {
+  color: rgba(255, 226, 211, 0.66);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.v17-week-column small {
+  color: rgba(255, 222, 212, 0.4);
+  font-size: 10px;
+}
+
+.v17-last-night {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 226, 215, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 237, 231, 0.035);
+}
+
+.v17-last-night span {
+  grid-row: span 2;
+  color: #e7ad8a;
+  font-size: 12px;
+}
+
+.v17-last-night strong {
+  color: rgba(255, 237, 230, 0.75);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.v17-last-night small {
+  color: rgba(255, 220, 211, 0.4);
+  font-size: 10px;
+}
+
+.v17-alarm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.v17-alarm-option {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  min-height: 126px;
+  padding: 13px 11px;
+  border: 1px solid rgba(255, 225, 214, 0.1);
+  border-radius: 17px;
+  background: rgba(255, 237, 231, 0.035);
+  color: rgba(255, 230, 221, 0.68);
+  text-align: left;
+}
+
+.v17-alarm-option[data-active="true"] {
+  border-color: rgba(255, 188, 148, 0.46);
+  background: rgba(255, 182, 140, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(255, 188, 148, 0.08);
+}
+
+.v17-alarm-option > span {
+  color: #f2b28d;
+  font-size: 22px;
+}
+
+.v17-alarm-option strong {
+  color: rgba(255, 238, 230, 0.82);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.v17-alarm-option small {
+  color: rgba(255, 220, 211, 0.43);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
 /* V1.7: the app shell keeps the original plum night direction while moving
    navigation, library, mixer, breathing, and profile into separate surfaces. */
 .v17-shell {

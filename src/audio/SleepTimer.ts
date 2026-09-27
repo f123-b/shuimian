@@ -1,10 +1,11 @@
-import type { FadeMinutes } from "../storage/types";
+import type { AlarmTone, FadeMinutes } from "../storage/types";
 
 export interface SleepTimerConfig {
   startedAt: number;
   endsAt: number;
   fadeMinutes: FadeMinutes;
   alarmOnEnd?: boolean;
+  alarmTone?: AlarmTone;
 }
 
 export interface SleepTimerSnapshot extends SleepTimerConfig {
@@ -21,9 +22,9 @@ export function readSleepTimer(timer: SleepTimerConfig | null, now = Date.now())
   return { ...timer, remainingMs, fadeFactor, expired: remainingMs <= 0 };
 }
 
-export function createSleepTimer(minutes: number | null, fadeMinutes: FadeMinutes, alarmOnEnd = false, now = Date.now()) {
+export function createSleepTimer(minutes: number | null, fadeMinutes: FadeMinutes, alarmOnEnd = false, alarmTone: AlarmTone = "dawn", now = Date.now()) {
   if (minutes === null) return null;
-  return { startedAt: now, endsAt: now + minutes * 60_000, fadeMinutes, alarmOnEnd } satisfies SleepTimerConfig;
+  return { startedAt: now, endsAt: now + minutes * 60_000, fadeMinutes, alarmOnEnd, alarmTone } satisfies SleepTimerConfig;
 }
 
 export function formatRemaining(ms: number) {

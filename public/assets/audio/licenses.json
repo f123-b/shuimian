@@ -15,6 +15,60 @@
       "license": "CC0",
       "author": "Bart Massey",
       "originalUrl": "https://github.com/pdx-cs-sound/wavs/blob/main/noise.wav"
+    },
+    {
+      "file": "rain-real.mp3",
+      "name": "小雨",
+      "source": "Freesound",
+      "license": "CC0 1.0",
+      "author": "barkenov",
+      "originalUrl": "https://freesound.org/people/barkenov/sounds/640655/",
+      "downloadUrl": "https://cdn.freesound.org/previews/640/640655_2414299-hq.mp3"
+    },
+    {
+      "file": "rain-window-real.mp3",
+      "name": "窗外雨",
+      "source": "Freesound",
+      "license": "CC0 1.0",
+      "author": "bastipictures",
+      "originalUrl": "https://freesound.org/people/bastipictures/sounds/243781/",
+      "downloadUrl": "https://cdn.freesound.org/previews/243/243781_997601-hq.mp3"
+    },
+    {
+      "file": "rain-thunder-real.mp3",
+      "name": "雷雨",
+      "source": "Freesound",
+      "license": "CC0 1.0",
+      "author": "TRP",
+      "originalUrl": "https://freesound.org/people/TRP/sounds/717890/",
+      "downloadUrl": "https://cdn.freesound.org/previews/717/717890_97550-hq.mp3"
+    },
+    {
+      "file": "wind-real.mp3",
+      "name": "夜晚微风",
+      "source": "Freesound",
+      "license": "CC0 1.0",
+      "author": "dlgebert",
+      "originalUrl": "https://freesound.org/people/dlgebert/sounds/527281/",
+      "downloadUrl": "https://cdn.freesound.org/previews/527/527281_942923-hq.mp3"
+    },
+    {
+      "file": "ocean-real.mp3",
+      "name": "海浪",
+      "source": "Freesound",
+      "license": "CC0 1.0",
+      "author": "SamsterBirdies",
+      "originalUrl": "https://freesound.org/people/SamsterBirdies/sounds/578524/",
+      "downloadUrl": "https://cdn.freesound.org/previews/578/578524_5487341-hq.mp3"
+    },
+    {
+      "file": "tide-real.mp3",
+      "name": "潮汐",
+      "source": "Freesound",
+      "license": "CC0 1.0",
+      "author": "Tom_Kaszuba",
+      "originalUrl": "https://freesound.org/people/Tom_Kaszuba/sounds/659002/",
+      "downloadUrl": "https://cdn.freesound.org/previews/659/659002_11673893-hq.mp3"
     }
   ],
   "generatedFallbacks": "Rain, water, nature, indoor, scene, and colored-noise variants are procedurally generated locally when no bundled asset is available."

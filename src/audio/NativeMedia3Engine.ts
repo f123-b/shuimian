@@ -9,6 +9,21 @@ export class NativeMedia3Engine implements AudioEngine {
   private timer: SleepTimerConfig | null = null;
   private listeners = new Set<(state: AudioEngineState) => void>();
 
+  constructor() {
+    void SleepAudio.addListener("playbackStateChanged", (state) => {
+      this.isPlaying = state.isPlaying;
+      this.tracks = state.tracks.slice(0, 3);
+      this.timer = state.timer;
+      this.emit();
+    });
+    void SleepAudio.getState().then((state) => {
+      this.isPlaying = state.isPlaying;
+      this.tracks = state.tracks.slice(0, 3);
+      this.timer = state.timer;
+      this.emit();
+    }).catch(() => undefined);
+  }
+
   private emit() {
     const state = this.getState();
     this.listeners.forEach((listener) => listener(state));

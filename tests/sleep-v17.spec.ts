@@ -41,3 +41,16 @@ test("breathing and three-track mixer routes work", async ({ page }) => {
   await expect(page.getByText("最多同时播放三种声音")).toBeVisible();
   await expect(page.locator(".v17-track-count")).toHaveText("3/3");
 });
+
+test("bedtime ritual leads into playback and profile keeps seven-day details", async ({ page }) => {
+  await page.getByRole("button", { name: "睡前仪式", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "把今天放下" })).toBeVisible();
+  await page.getByRole("button", { name: "完成这一步", exact: true }).click();
+  await page.getByRole("button", { name: "完成这一步", exact: true }).click();
+  await page.getByRole("button", { name: "开始睡觉", exact: true }).click();
+  await expect(page.getByText("正在放松")).toBeVisible();
+  await page.getByRole("button", { name: "我的", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "最近 7 天" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "小憩提示音" })).toBeVisible();
+  await page.getByRole("button", { name: /木琴/ }).click();
+});
